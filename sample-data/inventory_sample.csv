@@ -1,0 +1,7 @@
+snapshot_date,product_id,product_name,category,cultivar,product_available_qty,unit,batch_id,batch_qty,potency_tac,thc,thca,top_terpenes,on_hold,allow_samples
+2026-11-19,1001,Sample Strain A,Pack To Order,Sample Strain A,2268,Gram,5001,2268,25.5,21.5,24.4,"Limonene 0.8, Myrcene 0.6",no,yes
+2026-11-19,1002,Sample Strain A - SMALLS,Pack To Order,Sample Strain A,880,Gram,5002,880,29.4,25.1,28.3,"Limonene 0.7, Myrcene 0.5",no,no
+2026-11-19,1003,Sample Strain B - 1g Pre-Roll,Preroll,Sample Strain B,875,Unit,5003,875,21.6,18.9,21.0,,no,no
+2026-11-19,1004,Sample Strain C - Pre-Packed,Prepack,Sample Strain C,16,Unit,5004,16,25.8,21.9,24.9,"Caryophyllene 0.9",no,no
+2026-11-19,1005,Sample Strain D - 1g Resin Cart,Cart,Sample Strain D,229,Unit,5005,229,80.0,,,,no,no
+2026-11-19,1006,Sample Strain E,Pack To Order,Sample Strain E,14,Gram,5006,14,25.1,21.1,24.0,,yes,no
