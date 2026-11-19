@@ -1,0 +1,553 @@
+{
+  "name": "Daily wholesale data pull (sample)",
+  "nodes": [
+    {
+      "name": "Every day 4:30am",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "daysInterval": 1,
+              "field": "days",
+              "triggerAtHour": 4,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Weekdays 9am, noon, 3pm",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        160
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9,12,15 * * 1-5"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Last 3 days",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        80
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const from = new Date(Date.now() - 3*24*60*60*1000).toISOString().slice(0,19) + 'Z';\nreturn [{ json: { updated_at_from: from } }];"
+      }
+    },
+    {
+      "name": "Platform: shipping orders",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        520,
+        -200
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://app.apextrading.com/api/v1/shipping-orders",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendQuery": true,
+        "specifyQuery": "keypair",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "updated_at_from",
+              "value": "={{ $json.updated_at_from }}"
+            },
+            {
+              "name": "with_items",
+              "value": "true"
+            },
+            {
+              "name": "per_page",
+              "value": "100"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "pagination": {
+            "pagination": {
+              "paginationMode": "responseContainsNextURL",
+              "nextURL": "={{ $response.body.links.next }}",
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body.links || !$response.body.links.next }}",
+              "limitPagesFetched": true,
+              "maxRequests": 300,
+              "requestInterval": 250
+            }
+          }
+        }
+      },
+      "executeOnce": true,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "SET_YOUR_OWN",
+          "name": "Wholesale platform API (read only)"
+        }
+      }
+    },
+    {
+      "name": "Flatten order lines",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        -200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const num = v => { const n = parseFloat(String(v ?? '').replace(/[^0-9.\\-]/g, '')); return isNaN(n) ? '' : n; };\nconst nm = v => (v && typeof v === 'object') ? (v.name ?? '') : (v ?? '');\nconst rows = [];\nfor (const page of $input.all()) for (const o of (page.json.orders || [])) for (const it of (o.items || [])) {\n  const qty = num(it.order_quantity) || 0, price = num(it.order_price) || 0;\n  rows.push({ json: { line_key: `${o.id}-${it.id}`, order_id: o.id, invoice_number: o.invoice_number ?? '',\n    order_date: (o.order_date || '').slice(0, 10), delivery_date: (o.delivery_date || '').slice(0, 10), status: nm(o.order_status),\n    payment_status: o.payment_status ?? '', buyer_id: o.buyer_id ?? '', buyer_name: nm(o.buyer) || o.ship_name || '',\n    product_name: it.product_name ?? '', category: nm(it.product_category), quantity: qty, unit: nm(it.order_unit_measurement),\n    unit_price: price, line_total: Math.round(qty * price * 100) / 100 } });\n}\nreturn rows;"
+      }
+    },
+    {
+      "name": "Sheet: Orders",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1040,
+        -200
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Orders"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "line_key"
+          ],
+          "schema": []
+        },
+        "options": {
+          "handlingExtraData": "ignoreIt"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SET_YOUR_OWN",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "name": "Platform: buyers",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        520,
+        120
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://app.apextrading.com/api/v1/buyers",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendQuery": true,
+        "specifyQuery": "keypair",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "updated_at_from",
+              "value": "={{ $json.updated_at_from }}"
+            },
+            {
+              "name": "with_contacts",
+              "value": "true"
+            },
+            {
+              "name": "with_stage",
+              "value": "true"
+            },
+            {
+              "name": "per_page",
+              "value": "100"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "pagination": {
+            "pagination": {
+              "paginationMode": "responseContainsNextURL",
+              "nextURL": "={{ $response.body.links.next }}",
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body.links || !$response.body.links.next }}",
+              "limitPagesFetched": true,
+              "maxRequests": 300,
+              "requestInterval": 250
+            }
+          }
+        }
+      },
+      "executeOnce": true,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "SET_YOUR_OWN",
+          "name": "Wholesale platform API (read only)"
+        }
+      }
+    },
+    {
+      "name": "Flatten buyers",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        120
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const nm = v => (v && typeof v === 'object') ? (v.name ?? '') : (v ?? '');\nreturn $input.all().flatMap(page => (page.json.buyers || []).map(b => { const c = (b.contacts || []).find(x => x.email) || (b.contacts || [])[0] || {};\n  return { json: { buyer_id: b.id, name: b.name ?? '', city: b.city ?? '', stage: nm(b.stage),\n    receiving_days: [b.receiving_start_day, b.receiving_end_day].filter(Boolean).join(' to '),\n    contact_name: [c.name, c.last_name].filter(Boolean).join(' '), total_orders: b.total_orders ?? '', on_hold: b.hold ? 'yes' : 'no' } }; }));"
+      }
+    },
+    {
+      "name": "Sheet: Buyers",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1040,
+        120
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Buyers"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "buyer_id"
+          ],
+          "schema": []
+        },
+        "options": {
+          "handlingExtraData": "ignoreIt"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SET_YOUR_OWN",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "name": "Platform: available inventory",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        520,
+        440
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://app.apextrading.com/api/v1/available-inventory",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendQuery": true,
+        "specifyQuery": "keypair",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "include_batches",
+              "value": "true"
+            },
+            {
+              "name": "per_page",
+              "value": "500"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "executeOnce": true,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "SET_YOUR_OWN",
+          "name": "Wholesale platform API (read only)"
+        }
+      }
+    },
+    {
+      "name": "Sheet: clear Inventory",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        780,
+        440
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "clear",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Inventory"
+        },
+        "clear": "wholeSheet",
+        "keepFirstRow": true
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SET_YOUR_OWN",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "name": "Flatten inventory",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        440
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const nm = v => (v && typeof v === 'object') ? (v.name ?? '') : (v ?? '');\nconst today = new Date().toISOString().slice(0, 10);\n// THC and THCA as entered on the batch's lab results. Blank if not entered; never estimated.\nconst cann = (b, ab) => { const c = (b?.cannabinoids || []).find(x => String(x.abbreviation || '').toUpperCase() === ab); const v = c ? parseFloat(c.measurement) : NaN; return isNaN(v) ? '' : Math.round(v * 10) / 10; };\nconst rows = [];\nfor (const page of $('Platform: available inventory').all()) {\n  for (const p of (page.json.available_inventory || [])) {\n    const batches = (p.batches && p.batches.length) ? p.batches : [null];\n    for (const b of batches) {\n      const terps = (b?.terpenes || []).slice().sort((x, y) => (parseFloat(y.measurement) || 0) - (parseFloat(x.measurement) || 0))\n        .slice(0, 3).map(t => `${t.display_name || t.name} ${t.measurement ?? ''}`.trim()).join(', ');\n      rows.push({ json: {\n        snapshot_date: today, product_id: p.id, product_name: p.name ?? '', category: nm(p.category), cultivar: nm(p.cultivar),\n        product_available_qty: p.available_qty ?? '', unit: nm(p.unit_measurement), batch_id: b?.id ?? '', batch_qty: b?.quantity ?? '',\n        potency_tac: b?.predominate_cannabinoid_min_or_only ?? '', thc: cann(b, 'THC'), thca: cann(b, 'THCA'), top_terpenes: terps,\n        on_hold: b ? (b.hold ? 'yes' : 'no') : '', allow_samples: b ? (b.allow_samples ? 'yes' : 'no') : '',\n      }});\n    }\n  }\n}\nreturn rows;"
+      }
+    },
+    {
+      "name": "Sheet: Inventory",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1300,
+        440
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Inventory"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "handlingExtraData": "ignoreIt"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "SET_YOUR_OWN",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every day 4:30am": {
+      "main": [
+        [
+          {
+            "node": "Last 3 days",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weekdays 9am, noon, 3pm": {
+      "main": [
+        [
+          {
+            "node": "Last 3 days",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Last 3 days": {
+      "main": [
+        [
+          {
+            "node": "Platform: shipping orders",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Platform: buyers",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Platform: available inventory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Platform: shipping orders": {
+      "main": [
+        [
+          {
+            "node": "Flatten order lines",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flatten order lines": {
+      "main": [
+        [
+          {
+            "node": "Sheet: Orders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Platform: buyers": {
+      "main": [
+        [
+          {
+            "node": "Flatten buyers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flatten buyers": {
+      "main": [
+        [
+          {
+            "node": "Sheet: Buyers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Platform: available inventory": {
+      "main": [
+        [
+          {
+            "node": "Sheet: clear Inventory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sheet: clear Inventory": {
+      "main": [
+        [
+          {
+            "node": "Flatten inventory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flatten inventory": {
+      "main": [
+        [
+          {
+            "node": "Sheet: Inventory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/New_York"
+  }
+}

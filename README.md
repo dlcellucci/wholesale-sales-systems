@@ -17,7 +17,9 @@ Every tool has a check built in: totals that have to match the source, blanks in
 
 ## Folder layout
 
-- `sample-data/` has fake data that matches the real sheet layout.
-- `workflows/` has n8n exports with credentials removed. Coming soon.
+- `sample-data/` has fake inventory, orders, buyers and A/R data that matches the real sheet layout.
+- `workflows/` has n8n exports with every credential and sheet ID removed. Each one has notes on how it checks itself and where it breaks.
+- `scripts/check.sh` scans the repo for keys, emails, phone numbers, sheet IDs and real names before every commit.
+- `SAFETY.md` lists what never goes in here.
 
 Built while working through a 24-week AI build program.
