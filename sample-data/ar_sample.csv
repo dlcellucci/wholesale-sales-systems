@@ -1,0 +1,6 @@
+customer,current,1_30,31_60,61_90,91_plus,total,over_30,action
+Sample Store North,1200.00,0.00,0.00,0.00,0.00,1200.00,0.00,
+Sample Store Coast,0.00,900.00,1500.00,0.00,0.00,2400.00,1500.00,COLLECT
+Sample Store Valley,600.32,0.00,0.00,0.00,0.00,600.32,0.00,
+Sample Store Hill,0.00,0.00,0.00,800.00,2100.00,2900.00,2900.00,COLLECT and hold shipping
+TOTAL,1800.32,900.00,1500.00,800.00,2100.00,7100.32,4400.00,

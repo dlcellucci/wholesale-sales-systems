@@ -1,0 +1,5 @@
+buyer_id,name,city,stage,receiving_days,contact_name,total_orders,on_hold
+201,Sample Store North,Northtown,Active,Mon to Thu,Sample Buyer One,14,no
+202,Sample Store Coast,Coastville,Active,Tue to Fri,Sample Buyer Two,6,no
+203,Sample Store Valley,Valley City,New,Mon to Fri,Sample Buyer Three,1,no
+204,Sample Store Hill,Hillside,Lapsed,Wed to Fri,Sample Buyer Four,9,yes

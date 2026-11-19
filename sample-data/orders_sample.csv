@@ -1,0 +1,6 @@
+line_key,order_id,invoice_number,order_date,delivery_date,status,payment_status,buyer_id,buyer_name,product_name,category,quantity,unit,unit_price,line_total
+9001-1,9001,INV-1001,2026-11-10,2026-11-14,Delivered,Paid,201,Sample Store North,Sample Strain A,Pack To Order,448,Gram,3.57,1599.36
+9001-2,9001,INV-1001,2026-11-10,2026-11-14,Delivered,Paid,201,Sample Store North,Sample Strain B - 1g Pre-Roll,Preroll,100,Unit,3.00,300.00
+9002-1,9002,INV-1002,2026-11-12,2026-11-18,Shipped,Unpaid,202,Sample Store Coast,Sample Strain C - Pre-Packed,Prepack,24,Unit,12.50,300.00
+9003-1,9003,INV-1003,2026-11-17,2026-11-24,Submitted,Unpaid,203,Sample Store Valley,Sample Strain A - SMALLS,Pack To Order,224,Gram,2.68,600.32
+9003-2,9003,INV-1003,2026-11-17,2026-11-24,Submitted,Unpaid,203,Sample Store Valley,Sample Strain D - 1g Resin Cart,Cart,20,Unit,15.00,300.00
