@@ -1,0 +1,18 @@
+                                                          SAMPLE CO
+                                            A/R Aging Summary Report
+                                                         All Dates
+
+
+                                       CURRENT             1 - 30        31 - 60       61 - 90   91 AND OVER           Total
+SAMPLE STORE NORTH                    1,200.00                                                                      1,200.00
+SAMPLE STORE COAST                                         900.00       1,500.00                                    2,400.00
+SAMPLE STORE VALLEY                     600.32                                                                        600.32
+SAMPLE STORE HILL                                                                       800.00      2,100.00        2,900.00
+SAMPLE STORE RIVER                                        -150.00                                                    -150.00
+SAMPLE STORE WITH A VERY LONG
+                                                                          450.00                                      450.00
+NAME LLC
+TOTAL                                 1,800.32             750.00       1,950.00        800.00      2,100.00       $7,400.32
+
+
+                                         Monday, November 23, 2026 03:40 PM GMT-05:00
