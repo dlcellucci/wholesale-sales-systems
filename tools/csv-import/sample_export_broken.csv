@@ -1,0 +1,8 @@
+Invoice #,Date,Customer,Item,Qty,Rate,Amount,Status
+1001,11/02/2026,Sample Store North,Sample Jam - Blueberry 8oz,24,$6.50,$156.00,Paid
+1001,11/02/2026,Sample Store North,Sample Jam - Strawberry 8oz,12,$6.50,$78.00,Paid
+1002,11/04/2026,Sample Str. North,Sample Granola 12oz,20,$5.25,$105.00,Open
+1003,11/05/2026,Sample Store Coast,Sample Jam - Blueberry 8oz,48,$6.00,$288.00,Open
+1003,11/05/2026,Sample Store Coast,Sample Honey 16oz,10,"$9.00",$90.00,Open
+1004,11/09/2026,SAMPLE STORE VALLEY,Sample Granola 12oz,30,$5.25,$175.50,Paid
+1005,,Sample Store Hill,Sample Honey 16oz,6,$9.50,$57.00,Open
