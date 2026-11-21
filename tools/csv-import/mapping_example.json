@@ -1,0 +1,12 @@
+{
+  "_note": "Left side is our standard column. Right side is the column name in this producer's export. Change the right side for each client.",
+  "order_id": "Invoice #",
+  "order_date": "Date",
+  "date_format": "%m/%d/%Y",
+  "buyer_name": "Customer",
+  "product_name": "Item",
+  "quantity": "Qty",
+  "unit_price": "Rate",
+  "line_total": "Amount",
+  "payment_status": "Status"
+}

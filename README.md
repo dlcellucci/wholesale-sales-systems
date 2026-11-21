@@ -19,6 +19,7 @@ Every tool has a check built in: totals that have to match the source, blanks in
 
 - `sample-data/` has fake inventory, orders, buyers and A/R data that matches the real sheet layout.
 - `workflows/` has n8n exports with every credential and sheet ID removed. Each one has notes on how it checks itself and where it breaks.
+- `tools/csv-import/` turns any producer's CSV order export (QuickBooks, Shopify, Faire, a spreadsheet) into the standard Orders and Buyers sheets, and writes nothing unless the total matches their own sales report.
 - `scripts/check.sh` scans the repo for keys, emails, phone numbers, sheet IDs and real names before every commit.
 - `SAFETY.md` lists what never goes in here.
 
