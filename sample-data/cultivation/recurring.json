@@ -1,0 +1,13 @@
+[
+ {
+  "id": "r1",
+  "title": "Mother room IPM spray",
+  "area": "Mothers",
+  "type": "IPM spray",
+  "productId": "p1",
+  "start": "2026-11-02",
+  "every": 7,
+  "assignee": "c2",
+  "est": 45
+ }
+]
