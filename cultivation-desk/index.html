@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cultivation Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: a working grow-room desk — plain, fast, readable with dirty hands on a phone.
+   IDEA: the greenhouse whiteboard + clipboard: what room is on what day, and what needs doing.
+   PICTURE: the live week calendar itself, each day headed by room/day-count tags.
+   COLOUR and TYPE: deep leaf green band, white ground, lime for growth, coral for overdue; Barlow Semi Condensed + Barlow.
+   LAYOUT: header band with today's room status, tab row, then the working view; single column on phones. */
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#0c1510);--ink:light-dark(#13201a,#e8efe9);--mut:light-dark(#5b6b62,#9db0a4);
+--line:light-dark(#dfe6e1,#22322a);--card:light-dark(#f4f7f4,#132019);--leaf:#0f3d2a;--lime:#c6e46a;--coral:#e5533d;--amber:#d99a1e;--ok:#2f8a4f}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Barlow,system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3{font-family:"Barlow Semi Condensed",Barlow,sans-serif;line-height:1.1;margin:0}
+.top{background:var(--leaf);color:#fff;padding:18px max(4vw,14px) 14px}
+.top h1{font-size:clamp(26px,4vw,38px)}
+.top .sub{color:#cfe3d6;font-size:14px;margin-top:2px}
+.now{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.now span{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:6px 10px;font-size:14px}
+.now b{color:var(--lime);font-weight:600}
+nav{display:flex;gap:4px;overflow-x:auto;background:var(--leaf);padding:0 max(4vw,14px);position:sticky;top:0;z-index:5}
+nav a{flex:none;color:#cfe3d6;text-decoration:none;padding:12px 14px;font-weight:600;border-bottom:3px solid transparent;font-size:15px}
+nav a.on{color:#fff;border-color:var(--lime)}
+main{padding:16px max(4vw,14px) 60px;max-width:1240px;margin:0 auto}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+.bar h2{font-size:24px;margin-right:auto}
+button,select,input,textarea{font:inherit;font-size:16px;color:inherit}
+button{min-height:44px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);cursor:pointer;font-weight:600}
+button.pri{background:var(--leaf);color:#fff;border-color:var(--leaf)}
+button.lime{background:var(--lime);color:#13201a;border-color:var(--lime)}
+button.warn{color:var(--coral)}
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible,textarea:focus-visible{outline:3px solid var(--lime);outline-offset:2px}
+select,input,textarea{min-height:44px;border:1px solid var(--line);border-radius:10px;background:var(--bg);padding:8px 10px;width:100%}
+textarea{min-height:80px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{min-height:36px;padding:0 12px;border-radius:999px;font-size:14px}
+.chip.on{background:var(--leaf);color:#fff;border-color:var(--leaf)}
+.week{display:grid;gap:12px}
+.day{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--bg)}
+.day.today{border:2px solid var(--leaf);box-shadow:0 0 0 3px color-mix(in srgb,var(--lime) 45%,transparent)}
+.day h3{font-size:20px;display:flex;gap:8px;align-items:baseline}
+.day h3 small{font:500 13px Barlow;color:var(--mut)}
+.where{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.tag{font-size:13px;border-radius:6px;padding:3px 8px;background:var(--card);border:1px solid var(--line);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.tag.a-Mothers{border-left:4px solid #7a5cc4}.tag.a-Propagation{border-left:4px solid #3aa0c8}.tag.a-Veg{border-left:4px solid #5ab552}
+.tag.a-Flower-1{border-left:4px solid #e08a2e}.tag.a-Flower-2{border-left:4px solid #c8447a}
+ul.tasks{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.task{display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:10px;background:var(--card);cursor:pointer;border:1px solid transparent}
+.task:hover{border-color:var(--line)}
+.dot{flex:none;width:22px;height:22px;border-radius:50%;border:2px solid var(--mut);margin-top:2px}
+.task.notdone .dot{background:var(--coral);border-color:var(--coral)}.task.done .dot{background:var(--ok);border-color:var(--ok)}.task.skipped .dot{background:var(--amber);border-color:var(--amber)}
+.task.late .dot{border-color:var(--coral)}
+.task.done .tt{text-decoration:line-through;color:var(--mut)}
+.tt{font-weight:600}.tm{font-size:13px;color:var(--mut)}
+.late-txt{color:var(--coral);font-weight:600}
+.empty{color:var(--mut);font-size:14px;padding:4px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px}
+.card{border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--bg)}
+.card h3{font-size:20px}
+.big{font:700 34px/1 "Barlow Semi Condensed";color:var(--leaf)}
+:root[data-theme=dark] .big{color:var(--lime)}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .big{color:var(--lime)}}
+.meter{height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin:6px 0}
+.meter i{display:block;height:100%;background:var(--ok)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+section.blk{margin-bottom:28px}
+section.blk>h2{font-size:22px;margin-bottom:10px}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:13px;color:var(--mut);font-weight:600}
+td.n,th.n{text-align:right;white-space:nowrap}
+.flag{color:var(--coral);font-weight:600}
+.note{font-size:13px;color:var(--mut)}
+.hbar{display:grid;grid-template-columns:minmax(90px,30%) 1fr auto;gap:8px;align-items:center;font-size:14px;margin:6px 0}
+.hbar .m{height:14px;border-radius:4px;background:var(--line)}.hbar .m i{display:block;height:100%;border-radius:4px;background:var(--leaf)}
+:root[data-theme=dark] .hbar .m i{background:var(--lime)}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center;z-index:20}
+.ov.open{display:flex}
+.sheet{background:var(--bg);width:min(640px,100%);max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:18px}
+@media(min-width:700px){.ov{align-items:center}.sheet{border-radius:18px}}
+.sheet h2{font-size:24px;margin-bottom:10px}
+.f{display:grid;gap:4px;margin-bottom:10px}.f label{font-size:14px;font-weight:600}
+.f2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.checks{display:flex;flex-wrap:wrap;gap:8px}.checks label{display:flex;gap:6px;align-items:center;font-weight:500;background:var(--card);padding:6px 10px;border-radius:8px}
+.checks input{width:auto;min-height:0}
+.info{background:var(--card);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:15px}
+.info.bad{border-left:4px solid var(--coral)}
+.err{color:var(--coral);font-weight:600;min-height:1.2em}
+.mgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:10px}
+.wd{font-size:13px;color:var(--mut);text-align:center;padding:2px 0;font-weight:600}
+.cell{min-height:88px;height:auto;padding:6px;border-radius:10px;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:5px;text-align:left;font-weight:500;background:var(--bg);position:relative}
+.cell.out{opacity:.4}.cell.today{border:2px solid var(--leaf)}
+.cell.sel{background:var(--leaf);color:#fff;border-color:var(--leaf)}
+.dn{font:700 18px/1 "Barlow Semi Condensed",sans-serif}
+.pips{display:flex;flex-wrap:wrap;gap:3px}
+.pips i{font-style:normal;font-size:13px;line-height:1;padding:3px 5px;border-radius:5px;color:#fff;font-weight:600}
+.c-Mothers{background:#7a5cc4}.c-Propagation{background:#2f8fb5}.c-Veg{background:#3f9a3a}.c-Flower-1{background:#d17a1c}.c-Flower-2{background:#c03e72}
+.lt{position:absolute;top:5px;right:6px;width:10px;height:10px;border-radius:50%;background:var(--coral)}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:13px;color:var(--mut);margin-bottom:16px}
+.legend span{display:flex;align-items:center;gap:5px}.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+@media(max-width:600px){.mgrid{gap:3px}.cell{min-height:60px;padding:4px 3px;border-radius:8px}.dn{font-size:15px}.pips{gap:2px}.pips i{font-size:0;padding:0;width:8px;height:8px;border-radius:50%}.lt{width:8px;height:8px;top:4px;right:3px}}
+.msg{padding:10px 12px;border-radius:10px;background:var(--card);margin-bottom:12px}
+pre,.scroll{overflow-x:auto}
+@media(max-width:600px){table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px;border-bottom:1px solid var(--line)}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;white-space:normal;color:var(--mut)}.stack td:empty{display:none}.f2{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
+</style>
+<script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
+</head>
+<body>
+<header class="top">
+  <h1>Cultivation Desk</h1>
+  <div class="sub" id="sub">Loading…</div>
+  <div class="now" id="now"></div>
+</header>
+<nav id="nav">
+  <a href="#calendar">Calendar</a><a href="#batches">Batches</a><a href="#mothers">Mothers &amp; genetics</a><a href="#ipm">IPM</a><a href="#setup">Setup</a><a href="#ops">Ops</a>
+</nav>
+<main id="main"><p class="msg">Loading the desk…</p></main>
+<div class="ov" id="ov"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+<script>
+{
+const AREAS=["Mothers","Propagation","Veg","Flower 1","Flower 2"];
+const STG={prop:"Propagation",veg:"Veg",flower:"Flower",done:"Harvested"};
+const TYPES=["IPM spray","Drench","Feed","Defoliation","Cut clones","Transplant","Flip","Harvest","Clean","Scout","Other"];
+const COLLS=["strains","mothers","batches","templates","products","tasks","recurring","crew"];
+const S={};COLLS.forEach(c=>S[c]=[]);
+let settings={ranges:{prop:[7,20],veg:[21,28],flower:[52,65]},motherMax:150};
+let db=null,canWrite=true,got=new Set(),weekStart=null,areaF="All",who="";
+try{areaF=localStorage.getItem("cd-area")||"All";who=localStorage.getItem("cd-who")||""}catch(e){}
+const $=s=>document.querySelector(s);
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const DAY=864e5;
+const toN=s=>{const[y,m,d]=s.split("-").map(Number);return Math.round(Date.UTC(y,m-1,d)/DAY)};
+const toS=n=>new Date(n*DAY).toISOString().slice(0,10);
+const todayS=()=>{const t=new Date();return toS(Math.round(Date.UTC(t.getFullYear(),t.getMonth(),t.getDate())/DAY))};
+const add=(s,k)=>toS(toN(s)+k);
+const dayNum=(start,s)=>toN(s)-toN(start)+1;
+const fmt=s=>new Date(toN(s)*DAY).toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric",timeZone:"UTC"});
+const fmtS=s=>s?new Date(toN(s)*DAY).toLocaleDateString(undefined,{month:"short",day:"numeric",timeZone:"UTC"}):"";
+const byId=(c,id)=>S[c].find(x=>x.id===id);
+const nm=(c,id,f="name")=>byId(c,id)?.[f]||"";
+const crewName=id=>nm("crew",id)||"";
+const hm=m=>{m=+m||0;const h=Math.floor(m/60),r=m%60;return h?(r?`${h}h ${r}m`:`${h} hr`):`${r} min`};
+const nextWork=s=>{let n=toN(s)+1;while([0,6].includes(new Date(n*DAY).getUTCDay()))n++;return toS(n)};
+const aCls=a=>"a-"+String(a).replace(/\s+/g,"-");
+const monday=s=>{const n=toN(s);const wd=(new Date(n*DAY).getUTCDay()+6)%7;return toS(n-wd)};
+
+function cur(b){const s=b.starts||{};return s.done?"done":s.flower?"flower":s.veg?"veg":"prop"}
+function spans(b){const st=b.starts||{},o=["prop","veg","flower","done"],out=[];
+  for(let i=0;i<3;i++){const k=o[i];if(!st[k])continue;let end=null;for(let j=i+1;j<4;j++)if(st[o[j]]){end=st[o[j]];break}
+    out.push({stage:k,area:k==="flower"?(b.room||"Flower 1"):STG[k],start:st[k],end})}return out}
+
+function genTasks(from,to){const out=[];
+  for(const b of S.batches)for(const sp of spans(b))for(const t of S.templates.filter(t=>t.stage===sp.stage)){
+    const first=Math.max(1,+t.day||1),ev=Math.max(0,+t.every||0),last=ev?(+t.until||200):first;
+    for(let d=first;d<=last;d+=(ev||1e9)){const date=add(sp.start,d-1);
+      if(sp.end&&date>=sp.end)break;if(date>to)break;if(date<from)continue;
+      out.push({id:`g~${b.id}~${t.id}~${d}`,date,area:sp.area,title:t.title,type:t.type||"Other",productId:t.productId||"",assignee:t.assignee||"",est:+t.est||0,batchId:b.id,stage:sp.stage,day:d,status:"open",fromPlan:true})}}
+  for(const r of S.recurring){if(r.active===false||!r.start)continue;const ev=Math.max(1,+r.every||7);
+    let n=toN(r.start);const f=toN(from);if(n<f)n+=Math.ceil((f-n)/ev)*ev;
+    for(;n<=toN(to);n+=ev){const date=toS(n);if(r.end&&date>r.end)break;
+      out.push({id:`r~${r.id}~${date}`,date,area:r.area,title:r.title,type:r.type||"Other",productId:r.productId||"",assignee:r.assignee||"",est:+r.est||0,status:"open",fromPlan:true})}}
+  return out}
+function tasksIn(from,to){const ids=new Set(S.tasks.map(t=>t.id));
+  return [...genTasks(from,to).filter(t=>!ids.has(t.id)),...S.tasks.filter(t=>t.date>=from&&t.date<=to)]}
+function statusOn(date){const L=[];
+  for(const b of S.batches)for(const sp of spans(b))if(date>=sp.start&&(!sp.end||date<sp.end))
+    L.push({area:sp.area,text:`${sp.area==="Propagation"||sp.area==="Veg"?sp.area:sp.area} · ${b.name} ${nm("strains",b.strain)} · day ${dayNum(sp.start,date)}`});
+  const ms=S.mothers.filter(m=>m.status!=="retired"&&m.start&&m.start<=date);
+  if(ms.length){const a=ms.map(m=>dayNum(m.start,date));L.push({area:"Mothers",text:`Mothers · ${ms.length} plants · day ${Math.min(...a)}–${Math.max(...a)}`})}
+  const ord=a=>AREAS.indexOf(a.area);return L.sort((x,y)=>ord(x)-ord(y))}
+
+let shown=new Map();
+function taskRow(t,T){shown.set(t.id,t);const late=t.status==="open"&&t.date<T;const p=byId("products",t.productId);
+  const b=byId("batches",t.batchId);
+  return `<li class="task ${t.status} ${late?"late":""}" data-task="${esc(t.id)}" tabindex="0"><span class="dot"></span><div>
+  <div class="tt">${esc(t.title)}</div>
+  <div class="tm"><span class="tag ${aCls(t.area)}">${esc(t.area)}</span> ${b?esc(b.name)+(t.day?" · day "+t.day:"")+" · ":""}${p?esc(p.name)+(p.rate?` ${esc(p.rate)} ${esc(p.unit||"")}/gal`:' <span class="late-txt">no label rate</span>')+" · ":""}${t.assignee?esc(crewName(t.assignee)):"Unassigned"}${late?' · <span class="late-txt">overdue</span>':""}${t.est&&t.status==="open"?` · ${hm(t.est)} planned`:""}${t.status==="done"&&t.minutes?` · ${hm(t.minutes)}${t.est&&t.minutes>t.est?' <span class="late-txt">over by '+hm(t.minutes-t.est)+'</span>':""}`:""}${t.status==="notdone"?` · <span class="late-txt">not done</span>: ${esc(t.reason||"")}, needs ${hm(t.more)}`:""}${t.status==="skipped"?` · not needed: ${esc(t.reason||"")}`:""}</div></div></li>`}
+
+let calMode="month",monthAnchor=null,selDay=null;
+try{calMode=localStorage.getItem("cd-mode")||"month"}catch(e){}
+const nextMon=s=>{const[y,m]=s.split("-").map(Number);return m===12?`${y+1}-01-01`:`${y}-${String(m+1).padStart(2,"0")}-01`};
+const prevMon=s=>{const[y,m]=s.split("-").map(Number);return m===1?`${y-1}-12-01`:`${y}-${String(m-1).padStart(2,"0")}-01`};
+const filt=L=>L.filter(t=>(areaF==="All"||t.area===areaF)&&(!who||t.assignee===who));
+function calBar(title,prevAttr,nowAttr,nextAttr){const T=todayS();
+  return `<div class="bar"><h2>${title}</h2><div class="chips"><button class="chip ${calMode==="month"?"on":""}" data-mode="month">Month</button><button class="chip ${calMode==="week"?"on":""}" data-mode="week">Week</button></div>
+  <button ${prevAttr} aria-label="Previous">‹</button><button ${nowAttr}>Today</button><button ${nextAttr} aria-label="Next">›</button>
+  ${canWrite?`<button class="pri" data-add="${calMode==="month"?(selDay||T):T}">+ Task</button>`:""}</div>
+  <div class="bar"><div class="chips">${["All",...AREAS].map(a=>`<button class="chip ${a===areaF?"on":""}" data-area="${esc(a)}">${esc(a)}</button>`).join("")}</div>
+  <select id="who" style="max-width:220px" aria-label="Filter by person"><option value="">Everyone</option>${S.crew.map(c=>`<option value="${esc(c.id)}" ${c.id===who?"selected":""}>${esc(c.name)}</option>`).join("")}</select></div>`}
+function vCalendar(){return calMode==="week"?vWeek():vMonth()}
+function vMonth(){const T=todayS();if(!monthAnchor)monthAnchor=T.slice(0,8)+"01";if(!selDay)selDay=T;
+  const mEnd=add(nextMon(monthAnchor),-1),gs=monday(monthAnchor),ge=add(monday(mEnd),6);
+  const all=filt(tasksIn(gs,ge));const byDay={};for(const t of all)(byDay[t.date]=byDay[t.date]||[]).push(t);
+  const title=new Date(toN(monthAnchor)*DAY).toLocaleDateString(undefined,{month:"long",year:"numeric",timeZone:"UTC"});
+  shown=new Map();
+  let h=calBar(esc(title),'data-mon="-1"','data-mon="0"','data-mon="1"')+`<div class="mgrid">${["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d=>`<div class="wd">${d}</div>`).join("")}`;
+  for(let n=toN(gs);n<=toN(ge);n++){const d=toS(n),ts=byDay[d]||[];const late=ts.some(t=>t.status==="open"&&t.date<T);
+    const open=ts.filter(t=>t.status==="open");
+    h+=`<button class="cell ${d.slice(0,7)===monthAnchor.slice(0,7)?"":"out"} ${d===T?"today":""} ${d===selDay?"sel":""}" data-day="${d}" aria-label="${esc(fmt(d))}: ${ts.length} tasks${late?", some overdue":""}">
+    <span class="dn">${+d.slice(8)}</span><span class="pips">${AREAS.map(a=>{const k=open.filter(t=>t.area===a).length;return k?`<i class="c-${a.replace(/\s+/g,"-")}">${k}</i>`:""}).join("")}</span>${late?'<span class="lt"></span>':""}</button>`}
+  h+=`</div><div class="legend">${AREAS.map(a=>`<span><i class="c-${a.replace(/\s+/g,"-")}"></i>${a}</span>`).join("")}<span><i style="background:var(--coral);border-radius:50%"></i>Overdue</span><span>Numbers are open tasks</span></div>`;
+  const st=statusOn(selDay).filter(s=>areaF==="All"||s.area===areaF);
+  const ts=filt(tasksIn(selDay,selDay)).sort((a,b)=>AREAS.indexOf(a.area)-AREAS.indexOf(b.area)||a.title.localeCompare(b.title));
+  h+=`<section class="day ${selDay===T?"today":""}" id="daypanel"><h3>${fmt(selDay)}${selDay===T?" <small>Today</small>":""}</h3>
+  <div class="where">${st.map(s=>`<span class="tag ${aCls(s.area)}">${esc(s.text)}</span>`).join("")}</div>
+  <ul class="tasks">${ts.map(t=>taskRow(t,T)).join("")||'<li class="empty">No tasks this day</li>'}</ul>
+  ${canWrite?`<div class="row"><button data-add="${selDay}">+ Task on ${esc(fmtS(selDay))}</button></div>`:""}</section>`;
+  return h}
+function vWeek(){const T=todayS();if(!weekStart)weekStart=monday(T);const end=add(weekStart,6);
+  let all=tasksIn(weekStart,end);
+  const lateOld=tasksIn(add(T,-14),add(T,-1)).filter(t=>t.status==="open"&&t.date<weekStart);
+  if(areaF!=="All")all=all.filter(t=>t.area===areaF);if(who)all=all.filter(t=>t.assignee===who);
+  shown=new Map();let h=calBar(`Week of ${fmtS(weekStart)}`,'data-wk="-7"','data-wk="0"','data-wk="7"');
+  if(lateOld.length&&weekStart<=T&&T<=end)h+=`<div class="msg"><span class="late-txt">${lateOld.length} overdue</span> from earlier weeks — <button data-wk="-7">look back</button></div>`;
+  h+=`<div class="week">`;
+  for(let i=0;i<7;i++){const d=add(weekStart,i);const st=statusOn(d).filter(s=>areaF==="All"||s.area===areaF);
+    const ts=all.filter(t=>t.date===d).sort((a,b)=>AREAS.indexOf(a.area)-AREAS.indexOf(b.area)||a.title.localeCompare(b.title));
+    h+=`<section class="day ${d===T?"today":""}"><h3>${fmt(d)}${d===T?" <small>Today</small>":""}</h3>
+    <div class="where">${st.map(s=>`<span class="tag ${aCls(s.area)}">${esc(s.text)}</span>`).join("")}</div>
+    <ul class="tasks">${ts.map(t=>taskRow(t,T)).join("")||'<li class="empty">No tasks</li>'}</ul></section>`}
+  return h+"</div>"}
+
+function est(b){const k=cur(b);if(k==="done")return"";const r=settings.ranges[k];if(!r)return"";const s=b.starts[k];
+  const nxt={prop:"Rooted",veg:"Flip",flower:"Harvest"}[k];return `${nxt} est. ${fmtS(add(s,r[0]-1))}–${fmtS(add(s,r[1]-1))}`}
+function batchCard(b){const T=todayS(),k=cur(b),s=b.starts[k];const p=+b.planned||0,c=+b.cut||0;
+  const ms=(b.mothers||[]).map(id=>nm("mothers",id,"label")).filter(Boolean).join(", ");
+  return `<div class="card"><h3>${esc(b.name)} · ${esc(nm("strains",b.strain)||"No strain")}</h3>
+  <div class="note">${esc(k==="flower"?b.room:STG[k])}${ms?" · from "+esc(ms):""}</div>
+  ${k!=="done"?`<div class="big">Day ${dayNum(s,T)}</div><div class="note">${esc(est(b))}</div>`:`<div class="note">Harvested ${fmtS(b.starts.done)}</div>`}
+  <div class="note" style="margin-top:8px">Clones: ${c} cut of ${p} planned${p?` (${Math.round(c/p*100)}%)`:""}</div>
+  <div class="meter"><i style="width:${p?Math.min(100,c/p*100):0}%"></i></div>
+  ${canWrite?`<div class="row">${k==="prop"?`<button class="lime" data-adv="${b.id}" data-to="veg">Rooted → Veg</button>`:""}${k==="veg"?`<button class="lime" data-adv="${b.id}" data-to="flower">Flip → Flower</button>`:""}${k==="flower"?`<button class="lime" data-adv="${b.id}" data-to="done">Harvested</button>`:""}<button data-edit="batches" data-id="${b.id}">Edit</button></div>`:""}</div>`}
+function vBatches(){let h=`<div class="bar"><h2>Batches</h2>${canWrite?`<button class="pri" data-new="batches">+ New clone batch</button>`:""}</div>
+  <p class="note">Each batch moves when someone taps Rooted, Flip or Harvested. The tap saves the real date, and the day count and locked tasks start from it.</p>`;
+  const groups=[["Propagation",b=>cur(b)==="prop"],["Veg",b=>cur(b)==="veg"],["Flower 1",b=>cur(b)==="flower"&&b.room==="Flower 1"],["Flower 2",b=>cur(b)==="flower"&&b.room==="Flower 2"]];
+  for(const[g,f]of groups){const L=S.batches.filter(f);h+=`<section class="blk"><h2>${g}</h2>${L.length?`<div class="grid">${L.map(batchCard).join("")}</div>`:'<p class="empty">Nothing here right now.</p>'}</section>`}
+  const done=S.batches.filter(b=>cur(b)==="done").sort((a,b)=>b.starts.done.localeCompare(a.starts.done)).slice(0,6);
+  if(done.length)h+=`<section class="blk"><h2>Recently harvested</h2><div class="grid">${done.map(batchCard).join("")}</div></section>`;
+  return h}
+
+function vMothers(){const T=todayS();
+  let h=`<section class="blk"><div class="bar"><h2>Genetics in use</h2>${canWrite?`<button class="pri" data-new="strains">+ Strain</button>`:""}</div>
+  <table class="stack"><thead><tr><th>Strain</th><th class="n">Mothers</th><th class="n">Clones cut / planned</th><th>Notes</th><th></th></tr></thead><tbody>`;
+  for(const s of S.strains){const ms=S.mothers.filter(m=>m.strain===s.id&&m.status!=="retired").length;const bs=S.batches.filter(b=>b.strain===s.id);
+    const c=bs.reduce((a,b)=>a+(+b.cut||0),0),p=bs.reduce((a,b)=>a+(+b.planned||0),0);
+    h+=`<tr><td><b>${esc(s.name)}</b>${s.active===false?' <span class="note">(not in use)</span>':""}</td><td class="n">${ms}</td><td class="n">${c} / ${p}</td><td>${esc(s.notes||"")}</td><td>${canWrite?`<button data-edit="strains" data-id="${s.id}">Edit</button>`:""}</td></tr>`}
+  h+=`</tbody></table>${S.strains.length?"":'<p class="empty">No strains yet.</p>'}</section>
+  <section class="blk"><div class="bar"><h2>Mother plants</h2>${canWrite?`<button class="pri" data-new="mothers">+ Mother</button>`:""}</div>
+  <p class="note">Flagged past day ${settings.motherMax}. Clone counts come from batches that list this mother.</p>
+  <table class="stack"><thead><tr><th>Mother</th><th>Strain</th><th>Started</th><th class="n">Age</th><th class="n">Batches</th><th></th></tr></thead><tbody>`;
+  for(const m of [...S.mothers].sort((a,b)=>(a.status==="retired")-(b.status==="retired")||(a.label||"").localeCompare(b.label||""))){const age=m.start?dayNum(m.start,T):0;
+    const nb=S.batches.filter(b=>(b.mothers||[]).includes(m.id)).length;
+    h+=`<tr><td><b>${esc(m.label)}</b>${m.status==="retired"?' <span class="note">retired</span>':""}</td><td>${esc(nm("strains",m.strain))}</td><td>${fmtS(m.start)}</td>
+    <td class="n ${m.status!=="retired"&&age>settings.motherMax?"flag":""}">Day ${age}</td><td class="n">${nb}</td><td>${canWrite?`<button data-edit="mothers" data-id="${m.id}">Edit</button>`:""}</td></tr>`}
+  return h+`</tbody></table>${S.mothers.length?"":'<p class="empty">No mothers yet.</p>'}</section>`}
+
+function vIPM(){let h=`<section class="blk"><div class="bar"><h2>Products &amp; rates</h2>${canWrite?`<button class="pri" data-new="products">+ Product</button>`:""}</div>
+  <p class="note">Enter each rate straight from the product label. The label is the legal limit, so nobody guesses at mixing time.</p>
+  <table class="stack"><thead><tr><th>Product</th><th>Use</th><th class="n">Rate per gallon</th><th class="n">Re-entry</th><th>Label notes</th><th></th></tr></thead><tbody>`;
+  for(const p of S.products)h+=`<tr><td><b>${esc(p.name)}</b></td><td>${esc(p.use||"")}</td><td class="n">${p.rate?`${esc(p.rate)} ${esc(p.unit||"")}`:'<span class="flag">Needs label rate</span>'}</td><td class="n">${p.rei?esc(p.rei)+" hrs":'<span class="flag">—</span>'}</td><td>${esc(p.notes||"")}</td><td>${canWrite?`<button data-edit="products" data-id="${p.id}">Edit</button>`:""}</td></tr>`;
+  h+=`</tbody></table></section><section class="blk"><div class="bar"><h2>Repeating room schedules</h2>${canWrite?`<button class="pri" data-new="recurring">+ Repeating task</button>`:""}</div>
+  <p class="note">For room work on a fixed rhythm, like mother room IPM every 7 days. Batch-day tasks live in Setup.</p>
+  <table class="stack"><thead><tr><th>Task</th><th>Room</th><th>Product</th><th class="n">Every</th><th>Starts</th><th>Default person</th><th></th></tr></thead><tbody>`;
+  for(const r of S.recurring)h+=`<tr><td><b>${esc(r.title)}</b>${r.active===false?' <span class="note">paused</span>':""}</td><td>${esc(r.area)}</td><td>${esc(nm("products",r.productId))}</td><td class="n">${esc(r.every)} days</td><td>${fmtS(r.start)}</td><td>${esc(crewName(r.assignee))}</td><td>${canWrite?`<button data-edit="recurring" data-id="${r.id}">Edit</button>`:""}</td></tr>`;
+  return h+"</tbody></table></section>"}
+
+function vSetup(){let h=`<div class="bar"><h2>Locked cycle plan</h2>${canWrite?`<button class="pri" data-new="templates">+ Locked task</button>`:""}</div>
+  <p class="note">Day 1 is the day a batch enters the stage: cut day, transplant day, or flip day. A task set to day 29 of flower always lands 29 days after that batch's real flip date, counting the flip as day 1.</p>`;
+  for(const k of["prop","veg","flower"]){const L=S.templates.filter(t=>t.stage===k).sort((a,b)=>(+a.day)-(+b.day));
+    h+=`<section class="blk"><h2>${STG[k]}</h2><table class="stack"><thead><tr><th class="n">Day</th><th>Task</th><th>Type</th><th>Product</th><th>Repeats</th><th class="n">Planned</th><th></th></tr></thead><tbody>
+    ${L.map(t=>`<tr><td class="n"><b>${esc(t.day)}</b></td><td>${esc(t.title)}</td><td>${esc(t.type)}</td><td>${esc(nm("products",t.productId))}</td><td>${+t.every?`every ${esc(t.every)} days to day ${esc(t.until||200)}`:"once"}</td><td class="n">${t.est?hm(t.est):'<span class="flag">—</span>'}</td><td>${canWrite?`<button data-edit="templates" data-id="${t.id}">Edit</button>`:""}</td></tr>`).join("")}</tbody></table>${L.length?"":'<p class="empty">No locked tasks.</p>'}</section>`}
+  const r=settings.ranges;
+  h+=`<section class="blk"><div class="bar"><h2>Stage ranges</h2>${canWrite?`<button data-settings="1">Edit ranges</button>`:""}</div>
+  <p>Rooting ${r.prop[0]}–${r.prop[1]} days · Veg ${r.veg[0]}–${r.veg[1]} days · Flower ${r.flower[0]}–${r.flower[1]} days · Mothers flagged after day ${settings.motherMax}</p>
+  <p class="note">Ranges only drive the "est." windows. Real dates always come from the taps.</p></section>
+  <section class="blk"><div class="bar"><h2>Crew</h2>${canWrite?`<button class="pri" data-new="crew">+ Person</button>`:""}</div>
+  <div class="chips">${S.crew.map(c=>`<button class="chip" data-edit="crew" data-id="${c.id}">${esc(c.name)}${c.role?" · "+esc(c.role):""}</button>`).join("")||'<span class="empty">No crew yet.</span>'}</div></section>`;
+  return h}
+
+function hbars(obj,unit){const e=Object.entries(obj).sort((a,b)=>b[1]-a[1]);const mx=Math.max(1,...e.map(x=>x[1]));
+  return e.length?e.map(([k,v])=>`<div class="hbar"><span>${esc(k)}</span><div class="m"><i style="width:${v/mx*100}%"></i></div><b>${v.toLocaleString()} ${unit}</b></div>`).join(""):'<p class="empty">No data yet.</p>'}
+function vOps(){const T=todayS(),from=add(T,-29);const done=S.tasks.filter(t=>t.status==="done"&&t.date>=from&&t.date<=T);
+  const sk=S.tasks.filter(t=>t.status==="skipped"&&t.date>=from&&t.date<=T);
+  const late=tasksIn(add(T,-14),add(T,-1)).filter(t=>t.status==="open");const nd=S.tasks.filter(t=>t.status==="notdone"&&t.date>=from&&t.date<=T);
+  const noMin=done.filter(t=>!(+t.minutes>0)).length;const mins=done.reduce((a,t)=>a+(+t.minutes||0),0);
+  const by=f=>done.reduce((o,t)=>{const k=f(t)||"Unassigned";o[k]=(o[k]||0)+(+t.minutes||0);return o},{});
+  const cnt=nd.reduce((o,t)=>{const k=t.reason||"No reason";o[k]=(o[k]||0)+1;return o},{});
+  const ndWho=nd.reduce((o,t)=>{const k=crewName(t.assignee)||"Unassigned";o[k]=(o[k]||0)+1;return o},{});
+  const pv={};for(const t of done.filter(t=>+t.est>0)){const k=t.type||"Other";pv[k]=pv[k]||{p:0,a:0,n:0,over:0};pv[k].p+=+t.est;pv[k].a+=+t.minutes||0;pv[k].n++;if(+t.minutes>+t.est)pv[k].over++}
+  let h=`<div class="bar"><h2>Ops — last 30 days</h2></div>
+  <div class="grid"><div class="card"><div class="note">Labor logged</div><div class="big">${(mins/60).toFixed(1)} hrs</div><div class="note">${done.length} tasks done</div></div>
+  <div class="card"><div class="note">Not done</div><div class="big" style="${nd.length?"color:var(--coral)":""}">${nd.length}</div><div class="note">Rolled to the next workday. ${sk.length} more marked not needed</div></div>
+  <div class="card"><div class="note">Overdue (last 14 days)</div><div class="big" style="color:var(--coral)">${late.length}</div><div class="note">Planned tasks nobody marked</div></div>
+  <div class="card"><div class="note">Done without minutes</div><div class="big" style="${noMin?"color:var(--coral)":""}">${noMin}</div><div class="note">Should stay at 0, or the labor numbers lie</div></div></div>
+  <section class="blk" style="margin-top:20px"><h2>Where the hours go — by task type</h2>${hbars(Object.fromEntries(Object.entries(by(t=>t.type)).map(([k,v])=>[k,Math.round(v/6)/10])),"hrs")}</section>
+  <section class="blk"><h2>By room</h2>${hbars(Object.fromEntries(Object.entries(by(t=>t.area)).map(([k,v])=>[k,Math.round(v/6)/10])),"hrs")}</section>
+  <section class="blk"><h2>By person</h2>${hbars(Object.fromEntries(Object.entries(by(t=>crewName(t.assignee))).map(([k,v])=>[k,Math.round(v/6)/10])),"hrs")}</section>
+  <section class="blk"><h2>Planned vs. actual time</h2><p class="note">Done tasks that had a planned time. Over means it took longer than the lead planned.</p>
+  <table><thead><tr><th>Task type</th><th class="n">Done</th><th class="n">Planned</th><th class="n">Actual</th><th class="n">Ran over</th></tr></thead><tbody>${Object.entries(pv).sort((a,b)=>(b[1].a-b[1].p)-(a[1].a-a[1].p)).map(([k,v])=>`<tr><td>${esc(k)}</td><td class="n">${v.n}</td><td class="n">${hm(v.p)}</td><td class="n ${v.a>v.p?"flag":""}">${hm(v.a)}</td><td class="n">${v.over} of ${v.n}</td></tr>`).join("")||'<tr><td colspan="5" class="empty">No planned times logged yet.</td></tr>'}</tbody></table></section>
+  <section class="blk"><h2>Why tasks didn't get finished</h2>${hbars(cnt,"")}</section>
+  <section class="blk"><h2>Not done, by person</h2>${hbars(ndWho,"")}</section>`;
+  const rows=S.strains.map(s=>{const bs=S.batches.filter(b=>b.strain===s.id);
+    const root=bs.filter(b=>b.starts?.prop&&b.starts?.veg).map(b=>toN(b.starts.veg)-toN(b.starts.prop));
+    const fl=bs.filter(b=>b.starts?.flower&&b.starts?.done).map(b=>toN(b.starts.done)-toN(b.starts.flower));
+    const av=a=>a.length?(a.reduce((x,y)=>x+y,0)/a.length).toFixed(0)+` d (${a.length})`:"—";return `<tr><td>${esc(s.name)}</td><td class="n">${av(root)}</td><td class="n">${av(fl)}</td></tr>`}).join("");
+  h+=`<section class="blk"><h2>Real cycle times by strain</h2><p class="note">Built from the Rooted / Flip / Harvested taps. Number of batches in brackets.</p>
+  <table><thead><tr><th>Strain</th><th class="n">Days to root</th><th class="n">Days in flower</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+  return h}
+
+const VIEWS={calendar:vCalendar,batches:vBatches,mothers:vMothers,ipm:vIPM,setup:vSetup,ops:vOps};
+function view(){const v=location.hash.slice(1);return VIEWS[v]?v:"calendar"}
+function render(){const T=todayS(),v=view();
+  document.querySelectorAll("#nav a").forEach(a=>a.classList.toggle("on",a.getAttribute("href")==="#"+v));
+  $("#sub").textContent=`${fmt(T)} · ${S.batches.filter(b=>cur(b)!=="done").length} active batches · ${S.mothers.filter(m=>m.status!=="retired").length} mothers`;
+  $("#now").innerHTML=statusOn(T).map(s=>{const m=s.text.match(/^(.*) · (day [\d–]+)$/);return `<span>${esc(m?m[1]:s.text)}${m?` · <b>${esc(m[2])}</b>`:""}</span>`}).join("");
+  if(!got.size&&db){return}
+  $("#main").innerHTML=VIEWS[v]()}
+
+/* ---------- sheets (modals) ---------- */
+const ov=$("#ov"),sheet=$("#sheet");
+function open(html){sheet.innerHTML=html;ov.classList.add("open");sheet.querySelector("input,select,textarea,button")?.focus()}
+function close(){ov.classList.remove("open");sheet.innerHTML=""}
+ov.addEventListener("click",e=>{if(e.target===ov)close()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&ov.classList.contains("open"))close()});
+const opts=(c,f="name",blank="—")=>[["",blank],...S[c].map(x=>[x.id,x[f]||x.id])];
+const FIELDS={
+  strains:[{k:"name",l:"Strain name",req:1},{k:"active",l:"In use",t:"select",o:()=>[["true","Yes"],["false","No"]]},{k:"notes",l:"Notes (flavor, pheno, quirks)",t:"area"}],
+  mothers:[{k:"label",l:"Mother label (e.g. M3)",req:1},{k:"strain",l:"Strain",t:"select",o:()=>opts("strains")},{k:"start",l:"Started on",t:"date",req:1},{k:"status",l:"Status",t:"select",o:()=>[["active","Active"],["retired","Retired"]]},{k:"notes",l:"Notes",t:"area"}],
+  batches:[{k:"name",l:"Batch name (e.g. B22)",req:1},{k:"strain",l:"Strain",t:"select",o:()=>opts("strains")},{k:"mothers",l:"Cut from mothers",t:"multi",o:()=>S.mothers.filter(m=>m.status!=="retired").map(m=>[m.id,m.label])},
+    {k:"planned",l:"Clones planned",t:"number"},{k:"cut",l:"Clones actually cut",t:"number"},{k:"starts.prop",l:"Cut date (propagation day 1)",t:"date",req:1},
+    {k:"starts.veg",l:"Rooted / moved to veg",t:"date"},{k:"starts.flower",l:"Flipped to flower",t:"date"},{k:"room",l:"Flower room",t:"select",o:()=>[["Flower 1","Flower 1"],["Flower 2","Flower 2"]]},{k:"starts.done",l:"Harvested",t:"date"},{k:"notes",l:"Notes",t:"area"}],
+  products:[{k:"name",l:"Product",req:1},{k:"use",l:"Use",t:"select",o:()=>[["Foliar spray","Foliar spray"],["Drench","Drench"],["Both","Both"]]},{k:"rate",l:"Label rate per gallon (amount)"},{k:"unit",l:"Unit (ml, oz, tsp, tbsp, g)"},{k:"rei",l:"Re-entry interval (hours)",t:"number"},{k:"notes",l:"Label notes / PPE / last-use limits",t:"area"}],
+  recurring:[{k:"title",l:"Task",req:1},{k:"area",l:"Room",t:"select",o:()=>AREAS.map(a=>[a,a])},{k:"type",l:"Type",t:"select",o:()=>TYPES.map(a=>[a,a])},{k:"productId",l:"Product",t:"select",o:()=>opts("products")},
+    {k:"start",l:"First date",t:"date",req:1},{k:"every",l:"Every how many days",t:"number",req:1},{k:"est",l:"Planned time (minutes)",t:"number"},{k:"end",l:"Stop after (optional)",t:"date"},{k:"assignee",l:"Default person",t:"select",o:()=>opts("crew","name","Unassigned")},{k:"active",l:"Running",t:"select",o:()=>[["true","Yes"],["false","Paused"]]}],
+  templates:[{k:"stage",l:"Stage",t:"select",o:()=>[["prop","Propagation"],["veg","Veg"],["flower","Flower"]],req:1},{k:"day",l:"Day of stage",t:"number",req:1},{k:"title",l:"Task",req:1},{k:"type",l:"Type",t:"select",o:()=>TYPES.map(a=>[a,a])},
+    {k:"productId",l:"Product",t:"select",o:()=>opts("products")},{k:"every",l:"Repeat every N days (0 = once)",t:"number"},{k:"until",l:"Repeat until day",t:"number"},{k:"est",l:"Planned time (minutes)",t:"number"},{k:"assignee",l:"Default person",t:"select",o:()=>opts("crew","name","Unassigned")}],
+  crew:[{k:"name",l:"Name",req:1},{k:"role",l:"Role"},{k:"slack",l:"Slack member ID (starts with U)"},{k:"active",l:"Gets Slack tasks",t:"select",o:()=>[["true","Yes"],["false","No"]]}]};
+const TITLES={strains:"strain",mothers:"mother",batches:"clone batch",products:"product",recurring:"repeating task",templates:"locked task",crew:"person"};
+const getK=(o,k)=>k.split(".").reduce((a,p)=>a?.[p],o);
+function setK(o,k,v){const p=k.split(".");let x=o;while(p.length>1){const q=p.shift();x[q]=x[q]&&typeof x[q]==="object"?{...x[q]}:{};x=x[q]}x[p[0]]=v}
+function fieldHTML(f,v){const id="f_"+f.k.replace(/\./g,"_");let inp;
+  if(f.t==="select")inp=`<select id="${id}">${f.o().map(([a,b])=>`<option value="${esc(a)}" ${String(v??"")===String(a)?"selected":""}>${esc(b)}</option>`).join("")}</select>`;
+  else if(f.t==="multi")inp=`<div class="checks" id="${id}">${f.o().map(([a,b])=>`<label><input type="checkbox" value="${esc(a)}" ${(v||[]).includes(a)?"checked":""}>${esc(b)}</label>`).join("")||'<span class="note">Add mothers first.</span>'}</div>`;
+  else if(f.t==="area")inp=`<textarea id="${id}">${esc(v)}</textarea>`;
+  else inp=`<input id="${id}" type="${f.t==="number"?"number":f.t==="date"?"date":"text"}" ${f.t==="number"?'inputmode="decimal" step="any"':""} value="${esc(v)}">`;
+  return `<div class="f"><label for="${id}">${esc(f.l)}${f.req?" *":""}</label>${inp}</div>`}
+function readField(f){const el=document.getElementById("f_"+f.k.replace(/\./g,"_"));
+  if(f.t==="multi")return [...el.querySelectorAll("input:checked")].map(i=>i.value);
+  let v=el.value.trim();if(f.t==="number")return v===""?"":+v;if(v==="true")return true;if(v==="false")return false;return v}
+function editDoc(c,id){const d=id?byId(c,id):(c==="mothers"?{start:todayS(),status:"active"}:c==="batches"?{starts:{prop:todayS()},room:"Flower 1"}:c==="recurring"?{start:todayS(),every:7,active:true}:c==="strains"?{active:true}:{});
+  open(`<h2>${id?"Edit":"New"} ${TITLES[c]}</h2>${FIELDS[c].map(f=>fieldHTML(f,getK(d,f.k))).join("")}<p class="err" id="err"></p>
+  <div class="row"><button class="pri" id="save">Save</button><button id="cancel">Cancel</button>${id?'<button class="warn" id="del">Delete</button>':""}</div>`);
+  $("#cancel").onclick=close;
+  $("#save").onclick=async()=>{const o=JSON.parse(JSON.stringify(id?{...d}:{}));delete o.id;
+    for(const f of FIELDS[c]){const v=readField(f);if(f.req&&(v===""||v==null)){$("#err").textContent=`${f.l} is required.`;return}setK(o,f.k,v)}
+    if(c==="batches"){const s=o.starts||{};for(const k of Object.keys(s))if(!s[k])delete s[k];const ord=["prop","veg","flower","done"].filter(k=>s[k]);
+      for(let i=1;i<ord.length;i++)if(s[ord[i]]<s[ord[i-1]]){$("#err").textContent="Stage dates are out of order.";return}
+      if(s.veg&&!s.prop||s.flower&&!s.veg||s.done&&!s.flower){$("#err").textContent="Fill the earlier stage date first.";return}}
+    o.updatedAt=new Date().toISOString();
+    try{$("#save").disabled=true;await (id?db.collection(c).doc(id):db.collection(c).doc()).set(o);close()}catch(e){$("#save").disabled=false;$("#err").textContent=saveErr(e)}};
+  if(id)$("#del").onclick=async()=>{if($("#del").dataset.sure!=="1"){$("#del").dataset.sure="1";$("#del").textContent="Tap again to delete";return}
+    try{await db.collection(c).doc(id).delete();close()}catch(e){$("#err").textContent=saveErr(e)}}}
+const saveErr=e=>e?.code==="invalid_argument"?"You don't have permission to change this.":e?.code==="quota_exceeded"?"The desk's storage is full. Ask the owner to clear old tasks.":"Couldn't save. Try again.";
+
+function advance(bid,to){const b=byId("batches",bid);const lbl={veg:"Rooted — move to veg",flower:"Flip to flower",done:"Mark harvested"}[to];
+  open(`<h2>${esc(b.name)}: ${lbl}</h2><div class="f"><label for="advd">Date it happened</label><input id="advd" type="date" value="${todayS()}"></div>
+  ${to==="flower"?`<div class="f"><label for="advr">Which flower room</label><select id="advr"><option>Flower 1</option><option>Flower 2</option></select></div>`:""}
+  <p class="note">This becomes day 1 of the next stage. Locked tasks will land from this date.</p><p class="err" id="err"></p>
+  <div class="row"><button class="pri" id="save">Confirm</button><button id="cancel">Cancel</button></div>`);
+  $("#cancel").onclick=close;
+  $("#save").onclick=async()=>{const d=$("#advd").value;const prev=b.starts[cur(b)];if(!d){$("#err").textContent="Pick a date.";return}
+    if(d<prev){$("#err").textContent="That's before the current stage started.";return}
+    const up={starts:{[to]:d},updatedAt:new Date().toISOString()};if(to==="flower")up.room=$("#advr").value;
+    try{await db.collection("batches").doc(bid).update(up);close()}catch(e){$("#err").textContent=saveErr(e)}}}
+
+function taskSheet(t,dt){const isNew=!t;t=t||{id:"",date:dt||todayS(),area:areaF!=="All"?areaF:"Flower 1",title:"",type:"Other",productId:"",assignee:"",status:"open"};
+  const b=byId("batches",t.batchId);const stored=!!byId("tasks",t.id);
+  const pInfo=pid=>{const p=byId("products",pid);if(!p)return"";const ok=p.rate;return `<div class="info ${ok?"":"bad"}"><b>${esc(p.name)}</b>: ${ok?`<b>${esc(p.rate)} ${esc(p.unit||"")} per gallon</b>`:'<span class="flag">No label rate entered. Check the label before mixing.</span>'}${p.rei?` · Re-entry ${esc(p.rei)} hrs`:""}${p.notes?`<div class="note">${esc(p.notes)}</div>`:""}</div>`};
+  open(`<h2>${isNew?"New task":esc(t.title)}</h2>${b?`<div class="info">${esc(b.name)} · ${esc(nm("strains",b.strain))} · ${esc(STG[t.stage]||t.area)} day ${esc(t.day)}${t.fromPlan||String(t.id).startsWith("g~")?" · from the locked plan":""}</div>`:String(t.id).startsWith("r~")?'<div class="info">From a repeating room schedule</div>':""}
+  <div id="pinfo">${pInfo(t.productId)}</div>
+  <div class="f"><label for="tt">Task *</label><input id="tt" value="${esc(t.title)}"></div>
+  <div class="f2"><div class="f"><label for="td">Date</label><input id="td" type="date" value="${esc(t.date)}"></div>
+  <div class="f"><label for="ta">Room</label><select id="ta">${AREAS.map(a=>`<option ${a===t.area?"selected":""}>${a}</option>`).join("")}</select></div></div>
+  <div class="f2"><div class="f"><label for="ty">Type</label><select id="ty">${TYPES.map(a=>`<option ${a===t.type?"selected":""}>${a}</option>`).join("")}</select></div>
+  <div class="f"><label for="tp">Product</label><select id="tp">${opts("products").map(([a,n])=>`<option value="${esc(a)}" ${a===t.productId?"selected":""}>${esc(n)}</option>`).join("")}</select></div></div>
+  <div class="f"><label for="te">Planned time (minutes)</label><input id="te" type="number" inputmode="numeric" min="0" value="${esc(t.est||"")}"></div>
+  <div class="f"><label for="tw">Assigned to</label><select id="tw">${opts("crew","name","Unassigned").map(([a,n])=>`<option value="${esc(a)}" ${a===t.assignee?"selected":""}>${esc(n)}</option>`).join("")}</select></div>
+  <div class="f"><label>Status</label><div class="chips" id="tsb">${[["open","Open"],["done","Done"],["notdone","Not done"],["skipped","Not needed"]].map(([a,n])=>`<button class="chip ${t.status===a?"on":""}" data-st="${a}">${n}</button>`).join("")}</div></div>
+  <div class="f" id="fm"><label for="tm">Actual minutes *</label><input id="tm" type="number" inputmode="numeric" min="1" value="${esc(t.minutes||t.est||"")}"><span class="note">Starts at the planned time. Change it if it ran long or short.</span></div>
+  <div class="f" id="fr"><label for="trs" id="trl">Why *</label><input id="trs" list="rsl" value="${esc(t.reason||"")}"><datalist id="rsl"><option>Out of product</option><option>Short staffed</option><option>Plants didn't need it</option><option>Moved to another day</option><option>Equipment problem</option></datalist></div>
+  <div class="f" id="fmo"><label for="tmo">How much longer it needs (minutes) *</label><input id="tmo" type="number" inputmode="numeric" min="1" value="${esc(t.more||"")}"><span class="note">The rest rolls to the next workday, same person.</span></div>
+  <div class="f"><label for="tn">Notes</label><textarea id="tn">${esc(t.notes||"")}</textarea></div>
+  <p class="err" id="err"></p>
+  ${canWrite?`<div class="row"><button class="pri" id="save">Save</button><button id="cancel">Cancel</button>${stored?`<button class="warn" id="del">${t.fromPlan||/^[gr]~/.test(t.id)?"Reset to plan":"Delete"}</button>`:""}</div>`:'<div class="row"><button id="cancel">Close</button></div>'}`);
+  let st=t.status;const sync=()=>{$("#fm").style.display=st==="done"?"":"none";$("#fr").style.display=st==="skipped"||st==="notdone"?"":"none";$("#fmo").style.display=st==="notdone"?"":"none";$("#trl").textContent=st==="notdone"?"Why it didn't get finished *":"Why it wasn't needed *";
+    sheet.querySelectorAll("[data-st]").forEach(x=>x.classList.toggle("on",x.dataset.st===st))};sync();
+  $("#tsb").onclick=e=>{const x=e.target.closest("[data-st]");if(x){st=x.dataset.st;sync()}};
+  $("#tp").onchange=()=>{$("#pinfo").innerHTML=pInfo($("#tp").value)};
+  $("#cancel").onclick=close;if(!canWrite)return;
+  $("#save").onclick=async()=>{const o={...t};delete o.fromPlan;
+    o.title=$("#tt").value.trim();o.date=$("#td").value;o.area=$("#ta").value;o.type=$("#ty").value;o.productId=$("#tp").value;o.assignee=$("#tw").value;o.notes=$("#tn").value.trim();o.status=st;o.est=+$("#te").value||0;
+    if(!o.title||!o.date){$("#err").textContent="Task and date are required.";return}
+    if(st==="done"){const m=+$("#tm").value;if(!(m>0)){$("#err").textContent="Enter minutes spent. The ops numbers depend on it.";return}o.minutes=m;o.doneAt=o.doneAt||new Date().toISOString();delete o.reason}
+    else if(st==="skipped"){const r=$("#trs").value.trim();if(!r){$("#err").textContent="Say why it wasn't needed.";return}o.reason=r;delete o.minutes;delete o.doneAt;delete o.more}
+    else if(st==="notdone"){const r=$("#trs").value.trim(),mo=+$("#tmo").value;if(!r){$("#err").textContent="Say why it didn't get finished.";return}if(!(mo>0)){$("#err").textContent="Enter how much longer it needs.";return}o.reason=r;o.more=mo;delete o.minutes;delete o.doneAt}
+    else{delete o.minutes;delete o.reason;delete o.doneAt;delete o.more}
+    o.updatedAt=new Date().toISOString();const id=o.id;delete o.id;
+    try{$("#save").disabled=true;const ref=id?db.collection("tasks").doc(id):db.collection("tasks").doc();await ref.set(o);
+      if(st==="notdone"){const cid=ref.id+"~c";if(!byId("tasks",cid))await db.collection("tasks").doc(cid).set({date:nextWork(o.date),area:o.area,title:"Finish: "+o.title.replace(/^Finish: /,""),type:o.type,productId:o.productId||"",assignee:o.assignee||"",est:o.more,batchId:o.batchId||"",stage:o.stage||"",day:o.day||"",status:"open",carryFrom:ref.id,updatedAt:o.updatedAt})}
+      close()}catch(e){$("#save").disabled=false;$("#err").textContent=saveErr(e)}};
+  if(stored)$("#del").onclick=async()=>{try{await db.collection("tasks").doc(t.id).delete();close()}catch(e){$("#err").textContent=saveErr(e)}}}
+
+function editSettings(){const r=settings.ranges;open(`<h2>Stage ranges</h2>
+  ${[["prop","Rooting"],["veg","Veg"],["flower","Flower"]].map(([k,n])=>`<div class="f2"><div class="f"><label for="r_${k}0">${n} shortest (days)</label><input id="r_${k}0" type="number" value="${r[k][0]}"></div><div class="f"><label for="r_${k}1">${n} longest (days)</label><input id="r_${k}1" type="number" value="${r[k][1]}"></div></div>`).join("")}
+  <div class="f"><label for="r_mm">Flag mothers after day</label><input id="r_mm" type="number" value="${settings.motherMax}"></div><p class="err" id="err"></p>
+  <div class="row"><button class="pri" id="save">Save</button><button id="cancel">Cancel</button></div>`);
+  $("#cancel").onclick=close;$("#save").onclick=async()=>{const n={ranges:{},motherMax:+$("#r_mm").value||150};
+    for(const k of["prop","veg","flower"]){const a=+$("#r_"+k+"0").value,b=+$("#r_"+k+"1").value;if(!(a>0&&b>=a)){$("#err").textContent="Each longest must be at least the shortest.";return}n.ranges[k]=[a,b]}
+    try{await db.doc("meta/settings").set(n);close()}catch(e){$("#err").textContent=saveErr(e)}}}
+
+/* ---------- events ---------- */
+$("#main").addEventListener("click",e=>{const x=e.target.closest("button,[data-task]");if(!x)return;
+  if(x.dataset.wk!==undefined){const k=+x.dataset.wk;weekStart=k===0?monday(todayS()):add(weekStart,k);render();return}
+  if(x.dataset.area){areaF=x.dataset.area;try{localStorage.setItem("cd-area",areaF)}catch(_){}render();return}
+  if(x.dataset.add!==undefined){taskSheet(null,x.dataset.add);return}
+  if(x.dataset.day){selDay=x.dataset.day;render();if(innerWidth<900)$("#daypanel")?.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth",block:"start"});return}
+  if(x.dataset.mon!==undefined){const k=+x.dataset.mon;if(k===0){monthAnchor=todayS().slice(0,8)+"01";selDay=todayS()}else{monthAnchor=k>0?nextMon(monthAnchor):prevMon(monthAnchor);selDay=monthAnchor.slice(0,7)===todayS().slice(0,7)?todayS():monthAnchor}render();return}
+  if(x.dataset.mode){calMode=x.dataset.mode;try{localStorage.setItem("cd-mode",calMode)}catch(_){}render();return}
+  if(x.dataset.task){taskSheet(shown.get(x.dataset.task));return}
+  if(x.dataset.new){editDoc(x.dataset.new,null);return}
+  if(x.dataset.edit){editDoc(x.dataset.edit,x.dataset.id);return}
+  if(x.dataset.adv){advance(x.dataset.adv,x.dataset.to);return}
+  if(x.dataset.settings){editSettings();return}});
+$("#main").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.dataset?.task)taskSheet(shown.get(e.target.dataset.task))});
+$("#main").addEventListener("change",e=>{if(e.target.id==="who"){who=e.target.value;try{localStorage.setItem("cd-who",who)}catch(_){}render()}});
+window.addEventListener("hashchange",()=>{render();window.scrollTo(0,0)});
+
+/* ---------- data ---------- */
+(async()=>{const timer=setTimeout(()=>{if(!got.size)$("#main").innerHTML='<p class="msg">The desk data can\'t be reached yet. Check your connection; it will load on its own.</p>'},10000);
+  try{const u=await claude.use("user");const ce=u?.canEdit?.();canWrite=ce===false?false:true}catch(e){}
+  db=await claude.use("db");
+  if(!db){clearTimeout(timer);$("#main").innerHTML='<p class="msg">Sign in to claude.ai to use the Cultivation Desk.</p>';return}
+  const onErr=e=>{if(e?.code==="revoked")$("#main").innerHTML='<p class="msg">Access to this desk changed. Reload to continue.</p>'};
+  for(const c of COLLS)db.collection(c).onSnapshot(s=>{S[c]=s.docs.map(d=>({id:d.id,...d.data()}));got.add(c);clearTimeout(timer);render()},onErr);
+  db.doc("meta/settings").onSnapshot(s=>{if(s.exists){const d=s.data();settings={ranges:{...settings.ranges,...(d.ranges||{})},motherMax:d.motherMax||150}}render()},onErr);
+})();
+render();
+}
+</script>
+</body>
+</html>

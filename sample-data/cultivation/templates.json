@@ -1,0 +1,30 @@
+[
+ {
+  "id": "tf3",
+  "stage": "flower",
+  "day": 29,
+  "title": "First defoliation",
+  "type": "Defoliation",
+  "assignee": "c2",
+  "est": 240
+ },
+ {
+  "id": "tf4",
+  "stage": "flower",
+  "day": 40,
+  "title": "Second defoliation",
+  "type": "Defoliation",
+  "est": 180
+ },
+ {
+  "id": "tp2",
+  "stage": "prop",
+  "day": 1,
+  "every": 2,
+  "until": 21,
+  "title": "Check domes & humidity",
+  "type": "Scout",
+  "assignee": "c3",
+  "est": 15
+ }
+]
