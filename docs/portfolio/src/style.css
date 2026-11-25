@@ -1,0 +1,18 @@
+* { margin: 0; padding: 0; }
+body { width: 1600px; height: 1000px; font-family: "Inter", "Helvetica Neue", Arial, sans-serif; background: #f4f1ea; color: #1d2b22; padding: 56px 64px; }
+.top { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 36px; }
+.kicker { font-size: 18px; letter-spacing: .14em; text-transform: uppercase; color: #5b7a63; font-weight: 700; margin-bottom: 10px; }
+h1 { font-size: 52px; line-height: 1.05; font-weight: 800; letter-spacing: -.02em; }
+.sub { font-size: 22px; color: #4a5a50; margin-top: 12px; max-width: 980px; line-height: 1.35; }
+.badge { background: #1d2b22; color: #f4f1ea; font-size: 16px; padding: 10px 18px; border-radius: 999px; font-weight: 600; white-space: nowrap; }
+.card { background: #fff; border-radius: 18px; box-shadow: 0 2px 0 #e2ddd1, 0 18px 40px -24px rgba(29,43,34,.35); padding: 28px 32px; }
+table { width: 100%; border-collapse: collapse; font-size: 20px; }
+th { text-align: left; font-size: 14px; letter-spacing: .1em; text-transform: uppercase; color: #6f7d74; padding: 0 12px 14px; border-bottom: 2px solid #ece7dc; }
+td { padding: 15px 12px; border-bottom: 1px solid #f0ebe1; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.pill { display: inline-block; font-size: 15px; font-weight: 700; padding: 6px 12px; border-radius: 999px; }
+.red { background: #fbe3dc; color: #a3361b; }
+.amber { background: #fbf0d4; color: #8a5b00; }
+.green { background: #dff0e2; color: #1f6b34; }
+.grey { background: #eceae4; color: #55605a; }
+.foot { position: absolute; left: 64px; right: 64px; bottom: 40px; display: flex; justify-content: space-between; font-size: 16px; color: #6f7d74; }
